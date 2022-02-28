@@ -1,43 +1,67 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router";
 
-const Create = (props) => {
+const Edit = () => {
   const [form, setForm] = useState({
     name: "",
     position: "",
     level: "",
   });
+  const params = useParams();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    async function fetchData() {
+      const id = params.id.toString();
+      const response = await fetch(`http://localhost:5000/record/${id}`);
+
+      if (!response.ok) {
+        const message = `An error has occurred: ${response.statusText}`;
+        window.alert(message);
+        return;
+      }
+
+      const record = await response.json();
+      if (!record) {
+        window.alert(`Record with id ${id} not found`);
+        navigate("/");
+        return;
+      }
+      setForm(record);
+    }
+
+    fetchData();
+    return;
+  }, [params.id, navigate]);
+
   function updateForm(value) {
-    return setForm((prev) => {
-      return { ...prev, ...value };
+    return (prev) => ({
+      ...prev,
+      ...value,
     });
   }
 
   async function onSubmit(e) {
     e.preventDefault();
+    const editPerson = {
+      name: form.name,
+      position: form.position,
+      level: form.level,
+    };
 
-    const newPerson = { ...form };
-    console.log(newPerson);
-
-    await fetch("http://localhost:5000/record/add", {
+    await fetch(`http://localhost:5000/update/${params.id}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newPerson),
-    }).catch((error) => {
-      window.alert(error);
-      return;
+      body: JSON.stringify({ editPerson }),
     });
 
-    setForm({ name: "", position: "", level: "" });
     navigate("/");
   }
 
   return (
     <div>
-      <h3>Create New Record</h3>
-      <form onSubmit={onSubmit}>
+      <h3>Update Record</h3>
+      <form action="" onSubmit={onSubmit}>
         <div className="form-group">
           <label htmlFor="name">Name</label>
           <input
@@ -114,4 +138,4 @@ const Create = (props) => {
   );
 };
 
-export default Create;
+export default Edit;
